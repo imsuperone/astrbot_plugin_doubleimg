@@ -1,4 +1,3 @@
-# 双图：APNG 第1帧=A、点开播B，以文件消息发出（保真名）。
 import asyncio
 import base64
 import io
