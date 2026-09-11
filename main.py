@@ -237,15 +237,18 @@ class DualPngPlugin(Star):
             size = out_path.stat().st_size
             with suppress(Exception):
                 os.chmod(out_path, 0o644)
-            seg = {"type": "file", "data": {
-                "file": out_path.resolve().as_uri(), "name": out_path.name}}
+            # 图片消息原图发出：行内预览+播动画全端一致，原字节不重编码；
+            # 存盘后缀由QQ按内容定（动图多为.apng），要效果就得认。
+            seg = {"type": "image", "data": {
+                "file": out_path.resolve().as_uri(),
+                "summary": "[动图]", "sub_type": 0}}
             try:
                 await _raw_send(event, [seg])
             except Exception:
                 if size <= MAX_B64_TOTAL:
                     seg["data"] = {
                         "file": "base64://" + base64.b64encode(out_path.read_bytes()).decode(),
-                        "name": out_path.name}
+                        "summary": "[动图]", "sub_type": 0}
                     try:
                         await _raw_send(event, [seg])
                     except Exception as e2:
@@ -255,7 +258,7 @@ class DualPngPlugin(Star):
                     yield event.plain_result("发送失败且文件太大无法 base64 重试，换小图再试。")
                     return
             yield event.plain_result(
-                f"已发出（{time.time()-t0:.1f}s，{size//1024}KB，{suffix}文件名）点击查看原图验证"
+                f"已发出（{time.time()-t0:.1f}s，{size//1024}KB）点击查看原图验证"
             )
         finally:
             _GATE.leave()
