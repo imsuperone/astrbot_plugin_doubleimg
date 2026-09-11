@@ -244,6 +244,7 @@ class DualPngPlugin(Star):
                 "summary": "[动图]", "sub_type": 0}}
             try:
                 await _raw_send(event, [seg])
+                logger.info(f"[双图] 通道 file://直发 {out_path.name}")
             except Exception:
                 if size <= MAX_B64_TOTAL:
                     seg["data"] = {
@@ -251,6 +252,7 @@ class DualPngPlugin(Star):
                         "summary": "[动图]", "sub_type": 0}
                     try:
                         await _raw_send(event, [seg])
+                        logger.info(f"[双图] 通道 base64重试 {out_path.name}")
                     except Exception as e2:
                         yield event.plain_result(f"发送失败：{type(e2).__name__}")
                         return
