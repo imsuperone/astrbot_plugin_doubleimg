@@ -1,0 +1,8 @@
+name: astrbot_plugin_doubleimg
+display_name: 双图
+desc: 通过apng实现 缩略图一张图 原图一张图
+version: 1.0.2
+author: Light
+repo: https://github.com/imsuperone/astrbot_plugin_doubleimg
+support_platforms: [aiocqhttp]
+astrbot_version: ">=3.4.0"
