@@ -82,11 +82,11 @@ def _fetch_bytes_sync(ref):
             raise ValueError(f"下载超限: {ref[:60]}")
         if len(blob) < 100:
             raise ValueError(f"下载内容太小: {ref[:60]}")
-        return blob, None
+        return blob
     if ref.startswith("base64://"):
-        return base64.b64decode(ref[len("base64://"):]), None
+        return base64.b64decode(ref[len("base64://"):])
     if ref.startswith("data:image"):
-        return base64.b64decode(ref.split(",", 1)[1]), None
+        return base64.b64decode(ref.split(",", 1)[1])
     p = ref[7:] if ref.startswith("file://") else ref
     lp = Path(p).expanduser()
     if not lp.is_absolute():
@@ -100,11 +100,14 @@ def _fetch_bytes_sync(ref):
     blob = lp.read_bytes()
     if len(blob) > MAX_FETCH_MB * 1024 * 1024:
         raise ValueError(f"文件超限: {lp}")
-    return blob, None
+    return blob
+
+def _call(event):
+    return getattr(getattr(getattr(event, "bot", None), "api", None), "call_action", None)
+
 
 async def _raw_send(event, segs):
-    api = getattr(getattr(event, "bot", None), "api", None)
-    call = getattr(api, "call_action", None)
+    call = _call(event)
     if not callable(call):
         raise RuntimeError("非 aiocqhttp 平台，无法发送")
     gid = ""
@@ -122,8 +125,7 @@ async def _raw_send(event, segs):
 async def _recall(event, mid):
     if not mid:
         return
-    api = getattr(getattr(event, "bot", None), "api", None)
-    call = getattr(api, "call_action", None)
+    call = _call(event)
     if not callable(call):
         return
     with suppress(Exception):
@@ -217,7 +219,7 @@ class DualPngPlugin(Star):
             with suppress(Exception):
                 os.chmod(workdir, 0o755)
             try:
-                (a_blob, _), (b_blob, _) = await asyncio.gather(
+                a_blob, b_blob = await asyncio.gather(
                     asyncio.to_thread(_fetch_bytes_sync, refs[0]),
                     asyncio.to_thread(_fetch_bytes_sync, refs[1]),
                 )
@@ -239,17 +241,14 @@ class DualPngPlugin(Star):
                 os.chmod(out_path, 0o644)
             # 图片消息原图发出：行内预览+播动画全端一致，原字节不重编码；
             # 存盘后缀由QQ按内容定（动图多为.apng），要效果就得认。
-            seg = {"type": "image", "data": {
-                "file": out_path.resolve().as_uri(),
+            seg = {"type": "image", "data": {"file": out_path.resolve().as_uri(),
                 "summary": "[动图]", "sub_type": 0}}
             try:
                 await _raw_send(event, [seg])
                 logger.info(f"[双图] 通道 file://直发 {out_path.name}")
             except Exception:
                 if size <= MAX_B64_TOTAL:
-                    seg["data"] = {
-                        "file": "base64://" + base64.b64encode(out_path.read_bytes()).decode(),
-                        "summary": "[动图]", "sub_type": 0}
+                    seg["data"]["file"] = "base64://" + base64.b64encode(out_path.read_bytes()).decode()
                     try:
                         await _raw_send(event, [seg])
                         logger.info(f"[双图] 通道 base64重试 {out_path.name}")

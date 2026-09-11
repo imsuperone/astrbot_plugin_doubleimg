@@ -1,7 +1,7 @@
 name: astrbot_plugin_doubleimg
 display_name: 双图
 desc: 两张图合成一张图 未点开显示A点开加载原图后显示B
-version: 1.0.5
+version: 1.0.6
 author: Light
 repo: https://github.com/imsuperone/astrbot_plugin_doubleimg
 support_platforms: [aiocqhttp]
